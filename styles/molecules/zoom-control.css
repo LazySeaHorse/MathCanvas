@@ -1,0 +1,53 @@
+/* Zoom Controls */
+.zoom-controls {
+    position: absolute;
+    bottom: 1.25rem;
+    right: 1.25rem;
+    display: flex;
+    flex-direction: column;
+    background: var(--color-white);
+    box-shadow: var(--shadow-lg);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--color-slate-200);
+    z-index: 30;
+    overflow: hidden;
+}
+
+.zoom-btn {
+    padding: 0.75rem;
+    background: transparent;
+    border: none;
+    color: var(--color-slate-600);
+    cursor: pointer;
+    transition: background 0.15s ease;
+}
+
+.zoom-btn:hover {
+    background: var(--color-slate-50);
+}
+
+.zoom-btn:active {
+    background: var(--color-slate-100);
+}
+
+.zoom-indicator {
+    padding: 0.5rem;
+    font-size: 0.75rem;
+    font-weight: bold;
+    color: var(--color-slate-500);
+    text-align: center;
+    cursor: pointer;
+    transition: background 0.15s ease;
+}
+
+.zoom-indicator:hover {
+    background: var(--color-slate-50);
+}
+
+.zoom-btn-top {
+    border-bottom: 1px solid var(--color-slate-100);
+}
+
+.zoom-btn-bottom {
+    border-top: 1px solid var(--color-slate-100);
+}

@@ -1,0 +1,120 @@
+/**
+ * Node Factory - Creates and manages nodes
+ */
+import { appState, interaction } from '../state/appState.js';
+import { createMathNode } from '../components/organisms/MathNode.js';
+import { createTextNode } from '../components/organisms/TextNode.js';
+import { createGraphNode } from '../components/organisms/GraphNode.js';
+import { createImageNode } from '../components/organisms/ImageNode.js';
+
+export function createNode(x, y, type = appState.mode, content = "") {
+    const id = `node-${Date.now()}-${Math.random().toString(36).substr(2,5)}`;
+    
+    // Default contents
+    if (!content) {
+        if (type === 'text') content = "Double click to edit.\n\nSupports **Markdown** and $LaTeX$ math like $E=mc^2$.";
+        if (type === 'graph') content = "x^2"; 
+    }
+
+    const nodeData = {
+        id, x, y, type, content,
+        zIndex: ++appState.zIndexCounter
+    };
+
+    appState.fields.push(nodeData);
+    return nodeData;
+}
+
+export function renderNode(data, world, selectNodeFn) {
+    let nodeElement;
+    
+    switch(data.type) {
+        case 'math':
+            nodeElement = createMathNode(data, selectNodeFn);
+            break;
+        case 'text':
+            nodeElement = createTextNode(data, selectNodeFn);
+            break;
+        case 'graph':
+            nodeElement = createGraphNode(data, selectNodeFn);
+            break;
+        case 'image':
+            nodeElement = createImageNode(data, selectNodeFn);
+            break;
+        default:
+            return;
+    }
+    
+    // Add drag handlers
+    nodeElement.addEventListener('mousedown', (e) => {
+        // Check if we clicked an interactive child
+        const targetTag = e.target.tagName.toLowerCase();
+        const interactiveTags = ['input','textarea','math-field','button'];
+        
+        if (interactiveTags.includes(targetTag) || e.target.closest('.md-editor')) {
+            return;
+        }
+        
+        if (e.target.closest('.graph-target')) return;
+
+        // Only left button for node dragging
+        if (e.button !== 0) return;
+        
+        // If this node is not in the current selection, select only this node
+        // If it is already selected, keep the multi-selection
+        if (!interaction.selectedIds.includes(data.id)) {
+            selectNodeFn(data.id);
+        }
+
+        interaction.isDraggingNode = true;
+        interaction.selectedId = data.id;
+        
+        // Mark all selected nodes as dragging
+        interaction.selectedIds.forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.classList.add('dragging');
+        });
+        
+        e.preventDefault();
+        e.stopPropagation();
+    });
+    
+    world.appendChild(nodeElement);
+}
+
+export function removeNode(id) {
+    appState.fields = appState.fields.filter(f => f.id !== id);
+    const el = document.getElementById(id);
+    if (el) el.remove();
+    
+    // Remove from selection arrays
+    interaction.selectedIds = interaction.selectedIds.filter(sid => sid !== id);
+    if (interaction.selectedId === id) {
+        interaction.selectedId = interaction.selectedIds[0] || null;
+    }
+}
+
+export function selectNode(id, addToSelection = false) {
+    if (!addToSelection) {
+        // Clear all selections
+        document.querySelectorAll('.node').forEach(n => n.classList.remove('selected'));
+        interaction.selectedIds = [];
+        interaction.selectedId = null;
+    }
+    
+    if (id) {
+        const el = document.getElementById(id);
+        if (el) {
+            el.classList.add('selected');
+            el.style.zIndex = ++appState.zIndexCounter;
+            const d = appState.fields.find(f => f.id === id);
+            if(d) d.zIndex = appState.zIndexCounter;
+            
+            // Add to selection array if not already there
+            if (!interaction.selectedIds.includes(id)) {
+                interaction.selectedIds.push(id);
+            }
+            interaction.selectedId = id; // Keep for backwards compatibility
+        }
+    }
+}

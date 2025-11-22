@@ -1,0 +1,14 @@
+/* MathField (Input) Styling */
+math-field {
+    font-size: 1.25rem;
+    background: transparent;
+    outline: none; 
+    border: none;
+    user-select: text;
+    cursor: text;
+    padding: var(--spacing-xs);
+}
+
+math-field::part(container) { 
+    outline: none; 
+}
