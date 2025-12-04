@@ -6,33 +6,33 @@ import { createNode, renderNode, removeNode, selectNode } from '../../utils/node
 
 function updateSelectionFromRect(left, top, width, height, container) {
     const rect = container.getBoundingClientRect();
-    
+
     // Convert screen rect to world coordinates
     const worldLeft = (left - appState.pan.x) / appState.scale;
     const worldTop = (top - appState.pan.y) / appState.scale;
     const worldRight = ((left + width) - appState.pan.x) / appState.scale;
     const worldBottom = ((top + height) - appState.pan.y) / appState.scale;
-    
+
     // Clear current selection
     selectNode(null);
-    
+
     // Check each node for intersection
     appState.fields.forEach(field => {
         const nodeEl = document.getElementById(field.id);
         if (!nodeEl) return;
-        
+
         const nodeRect = nodeEl.getBoundingClientRect();
         const nodeWorldLeft = field.x;
         const nodeWorldTop = field.y;
         const nodeWorldRight = field.x + (nodeRect.width / appState.scale);
         const nodeWorldBottom = field.y + (nodeRect.height / appState.scale);
-        
+
         // Check if rectangles intersect
-        const intersects = !(worldRight < nodeWorldLeft || 
-                            worldLeft > nodeWorldRight || 
-                            worldBottom < nodeWorldTop || 
-                            worldTop > nodeWorldBottom);
-        
+        const intersects = !(worldRight < nodeWorldLeft ||
+            worldLeft > nodeWorldRight ||
+            worldBottom < nodeWorldTop ||
+            worldTop > nodeWorldBottom);
+
         if (intersects) {
             selectNode(field.id, true); // true = add to selection
         }
@@ -48,10 +48,10 @@ export function createCanvasWorld() {
     container.style.overflow = 'hidden';
     container.style.width = '100%';
     container.style.height = '100%';
-    
+
     const world = document.createElement('div');
     world.id = 'canvas-world';
-    
+
     // Selection rectangle
     const selectionRect = document.createElement('div');
     selectionRect.id = 'selection-rect';
@@ -63,16 +63,16 @@ export function createCanvasWorld() {
         display: none;
         z-index: 10000;
     `;
-    
+
     container.appendChild(world);
     container.appendChild(selectionRect);
-    
+
     return { container, world, selectionRect };
 }
 
 export function updateTransform(world, container) {
     world.style.transform = `translate(${appState.pan.x}px, ${appState.pan.y}px) scale(${appState.scale})`;
-    
+
     // Grid Updates
     const s = 40 * appState.scale;
     container.style.backgroundSize = `${s}px ${s}px`;
@@ -81,22 +81,22 @@ export function updateTransform(world, container) {
     // Update Zoom Indicator Text
     const percent = Math.round(appState.scale * 100);
     const indicator = document.getElementById('zoom-indicator');
-    if(indicator) indicator.innerText = percent + '%';
+    if (indicator) indicator.innerText = percent + '%';
 }
 
 export function setupCanvasEvents(container, world) {
     const selectionRect = document.getElementById('selection-rect');
-    
+
     // Mouse down - distinguish between left and middle button
     container.addEventListener('mousedown', (e) => {
         // Check if clicking on resize handle
         if (e.target.classList.contains('resize-handle')) {
             e.preventDefault();
             e.stopPropagation();
-            
+
             const nodeId = e.target.dataset.nodeId;
             const nodeData = appState.fields.find(f => f.id === nodeId);
-            
+
             if (nodeData && (nodeData.type === 'image' || nodeData.type === 'video')) {
                 interaction.isResizingNode = true;
                 interaction.resizeNodeId = nodeId;
@@ -105,13 +105,13 @@ export function setupCanvasEvents(container, world) {
                     width: nodeData.width || (nodeData.type === 'image' ? 300 : 560),
                     height: nodeData.height || (nodeData.type === 'image' ? 300 : 315)
                 };
-                
+
                 // Calculate aspect ratio
                 interaction.aspectRatio = interaction.resizeStartSize.width / interaction.resizeStartSize.height;
             }
             return;
         }
-        
+
         if (e.target === container || e.target === world) {
             // Middle button (1) or right button (2) - pan
             if (e.button === 1 || e.button === 2) {
@@ -122,7 +122,7 @@ export function setupCanvasEvents(container, world) {
                 container.style.cursor = 'grabbing';
                 return;
             }
-            
+
             // Left button (0) - selection rectangle
             if (e.button === 0) {
                 interaction.isSelecting = true;
@@ -136,7 +136,7 @@ export function setupCanvasEvents(container, world) {
             }
         }
     });
-    
+
     // Prevent context menu on right click
     container.addEventListener('contextmenu', (e) => {
         if (e.target === container || e.target === world) {
@@ -151,14 +151,14 @@ export function setupCanvasEvents(container, world) {
             const nodeData = appState.fields.find(f => f.id === interaction.resizeNodeId);
             if (nodeData) {
                 const dx = (e.clientX - interaction.startPos.x) / appState.scale;
-                
+
                 // Calculate new width maintaining aspect ratio (minimum 50px)
                 const newWidth = Math.max(50, interaction.resizeStartSize.width + dx);
                 const newHeight = newWidth / interaction.aspectRatio;
-                
+
                 nodeData.width = newWidth;
                 nodeData.height = newHeight;
-                
+
                 // Update the DOM element
                 const el = document.getElementById(interaction.resizeNodeId);
                 if (el) {
@@ -175,42 +175,44 @@ export function setupCanvasEvents(container, world) {
             }
             return;
         }
-        
+
         // Pan Canvas
         if (interaction.isDraggingCanvas) {
             const dx = e.clientX - interaction.startPos.x;
             const dy = e.clientY - interaction.startPos.y;
-            appState.pan.x = interaction.panStart.x + dx;
-            appState.pan.y = interaction.panStart.y + dy;
-            updateTransform(world, container);
+            appState.pan = {
+                x: interaction.panStart.x + dx,
+                y: interaction.panStart.y + dy
+            };
+            // updateTransform now called automatically via effect
         }
-        
+
         // Selection Rectangle
         if (interaction.isSelecting) {
             const rect = container.getBoundingClientRect();
             const currentX = e.clientX - rect.left;
             const currentY = e.clientY - rect.top;
-            
+
             const left = Math.min(interaction.selectionStart.x, currentX);
             const top = Math.min(interaction.selectionStart.y, currentY);
             const width = Math.abs(currentX - interaction.selectionStart.x);
             const height = Math.abs(currentY - interaction.selectionStart.y);
-            
+
             selectionRect.style.left = `${left}px`;
             selectionRect.style.top = `${top}px`;
             selectionRect.style.width = `${width}px`;
             selectionRect.style.height = `${height}px`;
             selectionRect.style.display = 'block';
-            
+
             // Update selection
             updateSelectionFromRect(left, top, width, height, container);
         }
-        
+
         // Drag Node(s)
         if (interaction.isDraggingNode) {
             const dx = e.movementX / appState.scale;
             const dy = e.movementY / appState.scale;
-            
+
             // Move all selected nodes
             interaction.selectedIds.forEach(id => {
                 const nodeData = appState.fields.find(f => f.id === id);
@@ -238,7 +240,7 @@ export function setupCanvasEvents(container, world) {
                 }
             }
         }
-        
+
         interaction.isDraggingCanvas = false;
         interaction.isDraggingNode = false;
         interaction.isResizingNode = false;
@@ -252,13 +254,13 @@ export function setupCanvasEvents(container, world) {
 
     // Zoom with Ctrl+Scroll
     container.addEventListener('wheel', (e) => {
-        if(e.target.tagName === 'TEXTAREA') return;
-        
+        if (e.target.tagName === 'TEXTAREA') return;
+
         if (e.ctrlKey) {
             e.preventDefault();
             const factor = Math.exp((e.deltaY < 0 ? 1 : -1) * 0.1);
             const newScale = Math.min(5, Math.max(0.1, appState.scale * factor));
-            
+
             const rect = container.getBoundingClientRect();
             const mx = e.clientX - rect.left;
             const my = e.clientY - rect.top;
@@ -268,7 +270,7 @@ export function setupCanvasEvents(container, world) {
             appState.pan.x = mx - wx * newScale;
             appState.pan.y = my - wy * newScale;
             appState.scale = newScale;
-            updateTransform(world, container);
+            //updateTransform(world, container);
         }
     }, { passive: false });
 
@@ -288,7 +290,7 @@ export function setupCanvasEvents(container, world) {
         if (e.key === 'Delete') {
             const tag = document.activeElement.tagName.toLowerCase();
             if (tag !== 'input' && tag !== 'textarea' && tag !== 'math-field') {
-                if(interaction.selectedIds.length > 0) {
+                if (interaction.selectedIds.length > 0) {
                     // Delete all selected nodes
                     [...interaction.selectedIds].forEach(id => removeNode(id));
                 }
@@ -297,11 +299,11 @@ export function setupCanvasEvents(container, world) {
         // Duplicate
         if ((e.ctrlKey || e.metaKey) && e.key === 'd') {
             e.preventDefault();
-            if(interaction.selectedIds.length > 0) {
+            if (interaction.selectedIds.length > 0) {
                 const newIds = [];
                 interaction.selectedIds.forEach(id => {
                     const orig = appState.fields.find(f => f.id === id);
-                    if(orig) {
+                    if (orig) {
                         const nodeData = createNode(orig.x + 30, orig.y + 30, orig.type, orig.content);
                         renderNode(nodeData, world, selectNode);
                         newIds.push(nodeData.id);

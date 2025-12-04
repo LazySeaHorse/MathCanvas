@@ -2,7 +2,7 @@
  * Main Application Entry Point
  * Orchestrates all components using Atomic Design Methodology
  */
-import { appState, interaction } from './state/appState.js';
+import { appState, interaction, effect, signals, computedValues } from './state/appState.js';
 import { exportJSON, importJSON, exportAllCanvasesJSON, importAllCanvasesJSON, exportSelectedNodesJSON, importNodesJSON } from './utils/storage.js';
 import { initDB, getAllCanvases, getCanvasData, saveCanvasData, createCanvas, deleteCanvas } from './utils/indexedDB.js';
 import { createNode, renderNode, selectNode } from './utils/nodeFactory.js';
@@ -21,10 +21,10 @@ class MathCanvasApp {
     async init() {
         // Initialize IndexedDB
         await initDB();
-        
+
         // Load or create initial canvas
         await this.initializeCanvas();
-        
+
         // Create main layout
         const appContainer = document.getElementById('app');
         appContainer.className = 'h-screen w-screen overflow-hidden text-slate-800 flex flex-col font-sans';
@@ -35,7 +35,7 @@ class MathCanvasApp {
         appContainer.style.flexDirection = 'column';
         appContainer.style.fontFamily = 'ui-sans-serif, system-ui, sans-serif';
         appContainer.style.color = '#334155';
-        
+
         // Create header
         const header = createAppHeader({
             onModeChange: (mode) => this.setMode(mode),
@@ -48,13 +48,13 @@ class MathCanvasApp {
             onClear: () => this.clearCanvas(),
             onCanvasManager: () => this.openCanvasManager()
         });
-        
+
         // Create canvas
         const { container, world, selectionRect } = createCanvasWorld();
         this.container = container;
         this.world = world;
         this.selectionRect = selectionRect;
-        
+
         // Create zoom controls
         const zoomControl = createZoomControl({
             onZoomIn: () => this.zoomIn(),
@@ -62,28 +62,44 @@ class MathCanvasApp {
             onReset: () => this.resetView(),
             initialZoom: Math.round(appState.scale * 100)
         });
-        
+
         // Append to DOM
         appContainer.appendChild(container);
         container.appendChild(header);
         container.appendChild(zoomControl);
-        
+
         // Setup events
         setupCanvasEvents(container, world);
-        
+
+        // ========== REACTIVE EFFECTS - Auto-update UI when state changes ==========
+
+        // Effect 1: Transform updates (scale/pan changes)
+        effect(() => {
+            const transform = computedValues.transform.value;
+            if (this.world && this.container) {
+                updateTransform(this.world, this.container);
+            }
+        });
+
+        // Effect 2: Mode selector updates
+        effect(() => {
+            const mode = signals.mode.value;
+            updateModeSelector(mode);
+        });
+
         // Render nodes from loaded canvas
         appState.fields.forEach(f => renderNode(f, world, selectNode));
-        
+
         // Update transform
         updateTransform(world, container);
-        
+
         // Auto-save every minute
         setInterval(() => this.saveCurrentCanvas(), 60000);
     }
 
     async initializeCanvas() {
         const canvases = await getAllCanvases();
-        
+
         if (canvases.length === 0) {
             // First time - create default canvas
             const id = await createCanvas('Untitled Canvas');
@@ -98,21 +114,21 @@ class MathCanvasApp {
     async loadCanvas(canvasId) {
         const data = await getCanvasData(canvasId);
         if (!data) return;
-        
+
         // Update app state
         appState.currentCanvasId = canvasId;
         appState.pan = data.pan;
         appState.scale = data.scale;
         appState.fields = data.fields;
         appState.zIndexCounter = data.zIndexCounter;
-        
+
         // Get canvas name
         const canvases = await getAllCanvases();
         const canvas = canvases.find(c => c.id === canvasId);
         if (canvas) {
             appState.currentCanvasName = canvas.name;
         }
-        
+
         // Clear and re-render
         if (this.world) {
             this.world.innerHTML = '';
@@ -123,7 +139,7 @@ class MathCanvasApp {
 
     async saveCurrentCanvas() {
         if (!appState.currentCanvasId) return;
-        
+
         try {
             await saveCanvasData(appState.currentCanvasId, {
                 pan: appState.pan,
@@ -139,7 +155,7 @@ class MathCanvasApp {
     async createNewCanvas(name) {
         // Save current canvas first
         await this.saveCurrentCanvas();
-        
+
         // Create and load new canvas
         const id = await createCanvas(name);
         await this.loadCanvas(id);
@@ -158,7 +174,7 @@ class MathCanvasApp {
                 document.body.removeChild(manager);
             }
         });
-        
+
         document.body.appendChild(manager);
     }
 
@@ -175,22 +191,22 @@ class MathCanvasApp {
     handleImport(input) {
         const importType = input.dataset.importType;
         console.log('Import type:', importType, 'File:', input.files[0]);
-        
+
         if (importType === 'nodes') {
             importNodesJSON(input.files[0], (importedNodes) => {
                 console.log('Importing nodes:', importedNodes);
                 // Append nodes to current canvas
                 appState.fields.push(...importedNodes);
-                
+
                 // Render the imported nodes
                 importedNodes.forEach(node => {
                     renderNode(node, this.world, selectNode);
                 });
-                
+
                 // Select the imported nodes
                 selectNode(null);
                 importedNodes.forEach(node => selectNode(node.id, true));
-                
+
                 console.log(`Imported ${importedNodes.length} node(s)`);
             });
         } else if (importType === 'single') {
@@ -198,7 +214,7 @@ class MathCanvasApp {
                 // Create new canvas with imported data
                 const name = data.canvasName || 'Imported Canvas';
                 const id = await createCanvas(name);
-                
+
                 // Save imported data
                 await saveCanvasData(id, {
                     pan: data.pan,
@@ -206,7 +222,7 @@ class MathCanvasApp {
                     fields: data.fields,
                     zIndexCounter: data.zIndexCounter
                 });
-                
+
                 // Load the imported canvas
                 await this.loadCanvas(id);
             });
@@ -217,29 +233,29 @@ class MathCanvasApp {
                 console.log('All canvases imported successfully');
             });
         }
-        
+
         input.value = '';
     }
 
     setMode(mode) {
         appState.mode = mode;
-        updateModeSelector(mode);
+        //updateModeSelector(mode);
     }
 
     zoomIn() {
         appState.scale *= 1.2;
-        updateTransform(this.world, this.container);
+        //updateTransform(this.world, this.container);
     }
 
     zoomOut() {
         appState.scale /= 1.2;
-        updateTransform(this.world, this.container);
+        //updateTransform(this.world, this.container);
     }
 
     resetView() {
         appState.scale = 1;
-        appState.pan = {x: 0, y: 0};
-        updateTransform(this.world, this.container);
+        appState.pan = { x: 0, y: 0 };
+        //updateTransform(this.world, this.container);
     }
 
     async manualSave() {
@@ -253,7 +269,7 @@ class MathCanvasApp {
     addImage(input) {
         const file = input.files[0];
         if (!file) return;
-        
+
         const reader = new FileReader();
         reader.onload = (e) => {
             // Load image to get natural dimensions
@@ -261,12 +277,12 @@ class MathCanvasApp {
             img.onload = () => {
                 const cx = -appState.pan.x / appState.scale + 100;
                 const cy = -appState.pan.y / appState.scale + 100;
-                
+
                 // Calculate dimensions (max 800px on longest side)
                 const maxSize = 800;
                 let width = img.naturalWidth;
                 let height = img.naturalHeight;
-                
+
                 if (width > maxSize || height > maxSize) {
                     const ratio = width / height;
                     if (width > height) {
@@ -277,7 +293,7 @@ class MathCanvasApp {
                         width = maxSize * ratio;
                     }
                 }
-                
+
                 const nodeData = createNode(cx, cy, 'image', e.target.result);
                 nodeData.width = width;
                 nodeData.height = height;
@@ -292,7 +308,7 @@ class MathCanvasApp {
     addVideo() {
         const url = prompt('Enter video URL:\n\n• YouTube: youtube.com/watch?v=...\n• Vimeo: vimeo.com/...\n• Or paste embed code');
         if (!url || url.trim() === '') return;
-        
+
         const cx = -appState.pan.x / appState.scale + 100;
         const cy = -appState.pan.y / appState.scale + 100;
         const nodeData = createNode(cx, cy, 'video', url.trim());
@@ -300,12 +316,12 @@ class MathCanvasApp {
     }
 
     async clearCanvas() {
-        if(confirm("Clear entire canvas?")) {
+        if (confirm("Clear entire canvas?")) {
             appState.fields = [];
             this.world.innerHTML = '';
-            appState.pan = {x: 0, y: 0};
+            appState.pan = { x: 0, y: 0 };
             appState.scale = 1;
-            updateTransform(this.world, this.container);
+            //updateTransform(this.world, this.container);
             await this.saveCurrentCanvas();
         }
     }

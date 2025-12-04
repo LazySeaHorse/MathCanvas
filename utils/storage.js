@@ -15,11 +15,11 @@ export function exportJSON() {
         fields: appState.fields,
         zIndexCounter: appState.zIndexCounter
     };
-    
-    const blob = new Blob([JSON.stringify(exportData, null, 2)], {type:"application/json"});
+
+    const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: "application/json" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
-    a.href = url; 
+    a.href = url;
     a.download = `${appState.currentCanvasName.replace(/[^a-z0-9]/gi, '-')}-${Date.now()}.json`;
     a.click();
     URL.revokeObjectURL(url);
@@ -27,9 +27,9 @@ export function exportJSON() {
 
 export function exportSelectedNodesJSON(selectedIds) {
     if (!selectedIds || selectedIds.length === 0) return;
-    
+
     const selectedFields = appState.fields.filter(f => selectedIds.includes(f.id));
-    
+
     const exportData = {
         version: 4,
         type: 'nodes',
@@ -37,73 +37,73 @@ export function exportSelectedNodesJSON(selectedIds) {
         nodeCount: selectedFields.length,
         fields: selectedFields
     };
-    
-    const blob = new Blob([JSON.stringify(exportData, null, 2)], {type:"application/json"});
+
+    const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: "application/json" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
-    a.href = url; 
+    a.href = url;
     a.download = `nodes-${selectedFields.length}-${Date.now()}.json`;
     a.click();
     URL.revokeObjectURL(url);
 }
 
 export function importJSON(file, callback) {
-    if(!file) return;
+    if (!file) return;
     const r = new FileReader();
     r.onload = (e) => {
         try {
             const data = JSON.parse(e.target.result);
-            
+
             // Auto-convert v3 to v4
             if (data.version === 3) {
                 data.version = 4;
                 data.canvasName = data.canvasName || 'Imported Canvas';
                 data.exportedAt = Date.now();
             }
-            
+
             if (data.version !== 4) {
                 alert("Unsupported file version");
                 return;
             }
-            
-            if(callback) callback(data);
-        } catch(err) { 
+
+            if (callback) callback(data);
+        } catch (err) {
             console.error(err);
-            alert("Invalid JSON file"); 
+            alert("Invalid JSON file");
         }
     };
     r.readAsText(file);
 }
 
 export function importNodesJSON(file, callback) {
-    if(!file) return;
+    if (!file) return;
     const r = new FileReader();
     r.onload = (e) => {
         try {
             const data = JSON.parse(e.target.result);
-            
+
             if (data.version !== 4 || data.type !== 'nodes') {
                 alert("Invalid nodes export file");
                 return;
             }
-            
+
             if (!data.fields || data.fields.length === 0) {
                 alert("No nodes found in file");
                 return;
             }
-            
+
             // Generate new IDs for all imported nodes
             const timestamp = Date.now();
             const importedNodes = data.fields.map((field, index) => ({
                 ...field,
-                id: `node-${timestamp}-${Math.random().toString(36).substr(2,5)}-${index}`,
-                zIndex: ++appState.zIndexCounter
+                id: `node-${timestamp}-${Math.random().toString(36).substr(2, 5)}-${index}`,
+                zIndex: (appState.zIndexCounter += 1)
             }));
-            
-            if(callback) callback(importedNodes);
-        } catch(err) { 
+
+            if (callback) callback(importedNodes);
+        } catch (err) {
             console.error(err);
-            alert("Invalid JSON file"); 
+            alert("Invalid JSON file");
         }
     };
     r.readAsText(file);
@@ -115,15 +115,15 @@ export function importNodesJSON(file, callback) {
 export async function exportAllCanvasesJSON() {
     try {
         const allData = await exportAllCanvases();
-        
-        const blob = new Blob([JSON.stringify(allData, null, 2)], {type:"application/json"});
+
+        const blob = new Blob([JSON.stringify(allData, null, 2)], { type: "application/json" });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
-        a.href = url; 
+        a.href = url;
         a.download = `all-canvases-${Date.now()}.json`;
         a.click();
         URL.revokeObjectURL(url);
-    } catch(err) {
+    } catch (err) {
         console.error('Export failed:', err);
         alert('Failed to export canvases');
     }
@@ -133,33 +133,33 @@ export async function exportAllCanvasesJSON() {
  * Import entire canvas store with conflict handling
  */
 export async function importAllCanvasesJSON(file, callback) {
-    if(!file) return;
-    
+    if (!file) return;
+
     const r = new FileReader();
     r.onload = async (e) => {
         try {
             const data = JSON.parse(e.target.result);
-            
+
             if (!data.version || data.version !== 1) {
                 alert("Unsupported export format");
                 return;
             }
-            
+
             // Check for conflicts first
             const result = await importAllCanvases(data, 'abort');
-            
+
             if (result.conflicts.length > 0) {
                 // Show conflict dialog
                 const conflictNames = result.conflicts.map(c => c.name).join('\n');
                 const message = `Found ${result.conflicts.length} conflicting canvas(es):\n\n${conflictNames}\n\nWhat would you like to do?`;
-                
+
                 const choice = await showConflictDialog(message);
-                
+
                 if (choice === 'abort') {
                     alert('Import cancelled');
                     return;
                 }
-                
+
                 // Re-import with chosen strategy
                 const finalResult = await importAllCanvases(data, choice);
                 alert(`Import complete!\nImported: ${finalResult.imported} canvas(es)`);
@@ -168,12 +168,12 @@ export async function importAllCanvasesJSON(file, callback) {
                 const finalResult = await importAllCanvases(data, 'rename');
                 alert(`Import complete!\nImported: ${finalResult.imported} canvas(es)`);
             }
-            
-            if(callback) callback();
-            
-        } catch(err) { 
+
+            if (callback) callback();
+
+        } catch (err) {
             console.error('Import failed:', err);
-            alert("Failed to import canvases"); 
+            alert("Failed to import canvases");
         }
     };
     r.readAsText(file);
@@ -197,7 +197,7 @@ function showConflictDialog(message) {
             z-index: 10000;
             max-width: 500px;
         `;
-        
+
         const overlay = document.createElement('div');
         overlay.style.cssText = `
             position: fixed;
@@ -208,7 +208,7 @@ function showConflictDialog(message) {
             background: rgba(0,0,0,0.5);
             z-index: 9999;
         `;
-        
+
         dialog.innerHTML = `
             <h3 style="margin-top: 0;">Canvas Conflicts Detected</h3>
             <p style="white-space: pre-line; margin: 1rem 0;">${message}</p>
@@ -218,25 +218,25 @@ function showConflictDialog(message) {
                 <button id="abort-btn" style="padding: 0.5rem 1rem; cursor: pointer;">Cancel</button>
             </div>
         `;
-        
+
         document.body.appendChild(overlay);
         document.body.appendChild(dialog);
-        
+
         const cleanup = () => {
             document.body.removeChild(dialog);
             document.body.removeChild(overlay);
         };
-        
+
         dialog.querySelector('#replace-btn').onclick = () => {
             cleanup();
             resolve('replace');
         };
-        
+
         dialog.querySelector('#rename-btn').onclick = () => {
             cleanup();
             resolve('rename');
         };
-        
+
         dialog.querySelector('#abort-btn').onclick = () => {
             cleanup();
             resolve('abort');

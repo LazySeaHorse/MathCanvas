@@ -10,8 +10,8 @@ import { createTableNode } from '../components/organisms/TableNode.js';
 import { createVideoNode } from '../components/organisms/VideoNode.js';
 
 export function createNode(x, y, type = appState.mode, content = "") {
-    const id = `node-${Date.now()}-${Math.random().toString(36).substr(2,5)}`;
-    
+    const id = `node-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`;
+
     // Default contents
     if (!content) {
         if (type === 'text') content = "Double click to edit.\n\nSupports **Markdown** and $LaTeX$ math like $E=mc^2$.";
@@ -27,7 +27,7 @@ export function createNode(x, y, type = appState.mode, content = "") {
         id, x, y, type, content,
         zIndex: ++appState.zIndexCounter
     };
-    
+
     // Add default dimensions for resizable nodes
     if (type === 'image') {
         nodeData.width = 300;
@@ -37,14 +37,15 @@ export function createNode(x, y, type = appState.mode, content = "") {
         nodeData.height = 315;
     }
 
-    appState.fields.push(nodeData);
+    // Use immutable update for signals to detect change
+    appState.fields = [...appState.fields, nodeData];
     return nodeData;
 }
 
 export function renderNode(data, world, selectNodeFn) {
     let nodeElement;
-    
-    switch(data.type) {
+
+    switch (data.type) {
         case 'math':
             nodeElement = createMathNode(data, selectNodeFn);
             break;
@@ -66,27 +67,27 @@ export function renderNode(data, world, selectNodeFn) {
         default:
             return;
     }
-    
+
     // Add drag handlers
     nodeElement.addEventListener('mousedown', (e) => {
         // Don't drag if clicking resize handle
         if (e.target.classList.contains('resize-handle')) {
             return;
         }
-        
+
         // Check if we clicked an interactive child
         const targetTag = e.target.tagName.toLowerCase();
-        const interactiveTags = ['input','textarea','math-field','button'];
-        
+        const interactiveTags = ['input', 'textarea', 'math-field', 'button'];
+
         if (interactiveTags.includes(targetTag) || e.target.closest('.md-editor')) {
             return;
         }
-        
+
         if (e.target.closest('.graph-target')) return;
 
         // Only left button for node dragging
         if (e.button !== 0) return;
-        
+
         // If this node is not in the current selection, select only this node
         // If it is already selected, keep the multi-selection
         if (!interaction.selectedIds.includes(data.id)) {
@@ -95,17 +96,17 @@ export function renderNode(data, world, selectNodeFn) {
 
         interaction.isDraggingNode = true;
         interaction.selectedId = data.id;
-        
+
         // Mark all selected nodes as dragging
         interaction.selectedIds.forEach(id => {
             const el = document.getElementById(id);
             if (el) el.classList.add('dragging');
         });
-        
+
         e.preventDefault();
         e.stopPropagation();
     });
-    
+
     world.appendChild(nodeElement);
 }
 
@@ -113,7 +114,7 @@ export function removeNode(id) {
     appState.fields = appState.fields.filter(f => f.id !== id);
     const el = document.getElementById(id);
     if (el) el.remove();
-    
+
     // Remove from selection arrays
     interaction.selectedIds = interaction.selectedIds.filter(sid => sid !== id);
     if (interaction.selectedId === id) {
@@ -128,15 +129,15 @@ export function selectNode(id, addToSelection = false) {
         interaction.selectedIds = [];
         interaction.selectedId = null;
     }
-    
+
     if (id) {
         const el = document.getElementById(id);
         if (el) {
             el.classList.add('selected');
             el.style.zIndex = ++appState.zIndexCounter;
             const d = appState.fields.find(f => f.id === id);
-            if(d) d.zIndex = appState.zIndexCounter;
-            
+            if (d) d.zIndex = appState.zIndexCounter;
+
             // Add to selection array if not already there
             if (!interaction.selectedIds.includes(id)) {
                 interaction.selectedIds.push(id);
