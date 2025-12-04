@@ -1,5 +1,10 @@
 /* Main CSS - Imports all component styles */
 
+/* Tailwind CSS */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
 /* Base */
 @import './base/reset.css';
 @import './base/variables.css';
