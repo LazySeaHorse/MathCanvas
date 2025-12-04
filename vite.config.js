@@ -13,8 +13,8 @@ export default defineConfig({
                 main: resolve(__dirname, 'index.html'),
             },
         },
-        // Enable minification
-        minify: 'terser',
+        // Enable minification (using esbuild - faster than terser)
+        minify: 'esbuild',
         // Generate source maps for debugging
         sourcemap: false,
     },
