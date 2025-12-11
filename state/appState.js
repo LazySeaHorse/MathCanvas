@@ -3,6 +3,12 @@
  * 100% backwards compatible - all existing code works unchanged
  */
 import { signal, computed, effect, batch } from '@preact/signals-core';
+import { DEFAULT_TOOL_CONFIG } from '../utils/toolRegistry.js';
+
+// Load config from localStorage
+const savedConfig = localStorage.getItem('canvas_tool_config');
+const initialToolConfig = savedConfig ? JSON.parse(savedConfig) : DEFAULT_TOOL_CONFIG;
+
 
 // ============================================================================
 // CORE SIGNALS (Internal - use appState for access)
@@ -15,8 +21,14 @@ export const signals = {
     panY: signal(0),
     mode: signal('math'),
     fields: signal([]),
-    zIndexCounter: signal(1)
+    zIndexCounter: signal(1),
+    toolConfig: signal(initialToolConfig)
 };
+
+// Persist tool config changes
+effect(() => {
+    localStorage.setItem('canvas_tool_config', JSON.stringify(signals.toolConfig.value));
+});
 
 // ============================================================================
 // COMPUTED VALUES (Auto-update when dependencies change)
@@ -102,6 +114,14 @@ export const appState = {
     },
     set zIndexCounter(v) {
         signals.zIndexCounter.value = v;
+    },
+
+    // toolConfig
+    get toolConfig() {
+        return signals.toolConfig.value;
+    },
+    set toolConfig(v) {
+        signals.toolConfig.value = v;
     }
 };
 
