@@ -10,9 +10,8 @@
     transition: all 0.2s;
 }
 
+/* Specific button variations define their own hover states */
 .canvas-action-btn:hover {
-    color: var(--color-accent-fg) !important;
-    background: currentColor !important;
     border-color: transparent;
 }
 
@@ -47,5 +46,5 @@
 
 .btn-action-delete:hover {
     background: var(--color-red-500);
-    color: white !important;
+    color: var(--color-white) !important;
 }

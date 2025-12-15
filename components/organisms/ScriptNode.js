@@ -64,7 +64,7 @@ export function createScriptNode(data, onSelect) {
         right: 0;
         width: 15px;
         height: 15px;
-        background: linear-gradient(135deg, transparent 50%, #94a3b8 50%);
+        background: linear-gradient(135deg, transparent 50%, var(--color-slate-400) 50%);
         cursor: se-resize;
         z-index: 20;
     `;

@@ -43,8 +43,8 @@ export function createGraphNode(data, onSelect) {
                 .replace(/\\/g, '');
 
             // Get current accent color from CSS variable
-            const accentColor = getComputedStyle(document.documentElement)
-                .getPropertyValue('--color-accent').trim() || '#3b82f6';
+            // Get current accent color from CSS variable
+            const accentColor = 'var(--color-accent)';
 
             functionPlot({
                 target: `#${graphId}`,

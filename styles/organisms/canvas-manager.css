@@ -1,7 +1,7 @@
 /* Canvas Manager Styling */
 .canvas-manager-overlay {
-    background: rgba(0, 0, 0, 0.5);
-    /* Semi-transparent backdrop */
+    background: color-mix(in srgb, var(--bg-canvas), transparent 50%);
+    /* Semi-transparent backdrop using canvas background */
     backdrop-filter: blur(2px);
 }
 
@@ -66,8 +66,9 @@
 }
 
 .action-btn:hover {
-    color: var(--color-accent-fg) !important;
-    background: currentColor !important;
+    background: var(--bg-surface-hover);
+    color: var(--text-primary);
+    border-color: var(--color-accent);
 }
 
 /* Specific button colors override via inline style in JS but we can provide defaults here if needed */

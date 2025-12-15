@@ -141,9 +141,9 @@ math-field::part(container) {
 }
 
 .md-preview blockquote {
-    border-left: 3px solid #cbd5e1;
+    border-left: 3px solid var(--color-slate-300);
     padding-left: 10px;
-    color: #64748b;
+    color: var(--color-slate-500);
     font-style: italic;
 }
 

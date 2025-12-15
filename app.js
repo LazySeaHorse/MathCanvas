@@ -35,7 +35,7 @@ class MathCanvasApp {
         appContainer.style.display = 'flex';
         appContainer.style.flexDirection = 'column';
         appContainer.style.fontFamily = 'ui-sans-serif, system-ui, sans-serif';
-        appContainer.style.color = '#334155';
+        appContainer.style.color = 'var(--color-slate-700)';
 
         // Create header
         const header = createAppHeader({
