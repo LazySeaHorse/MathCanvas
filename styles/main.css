@@ -18,13 +18,13 @@
 
 /* Organisms */
 /* @import './organisms/app-header.css'; - Migrated to Tailwind */
-@import './organisms/node.css';
+/* @import './organisms/node.css'; - Migrated to Tailwind */
 @import './organisms/canvas-world.css';
-@import './organisms/table-node.css';
+/* @import './organisms/table-node.css'; - Migrated to Tailwind */
 @import './organisms/video-node.css';
 @import './organisms/canvas-manager.css';
 @import './organisms/more-tools.css';
 @import './organisms/tool-config.css';
-@import './organisms/script-node.css';
+/* @import './organisms/script-node.css'; - Migrated to Tailwind */
 @import './organisms/canvas-manager-buttons.css';
 @import './organisms/action-bar.css';

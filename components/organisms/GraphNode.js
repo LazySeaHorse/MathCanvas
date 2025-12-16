@@ -4,16 +4,19 @@
 export function createGraphNode(data, onSelect) {
     const div = document.createElement('div');
     div.id = data.id;
-    div.className = 'node node-graph';
+    div.className = 'node absolute rounded-lg transition-shadow duration-150 bg-surface text-text-primary shadow-md border border-transparent [&.selected]:shadow-focus [&.selected]:shadow-lg [&.selected]:z-[1000] [&.selected]:border-accent [&.dragging]:cursor-grabbing [&.dragging]:opacity-90 p-3 w-[340px] flex flex-col gap-2 cursor-grab';
     div.style.left = `${data.x}px`;
     div.style.top = `${data.y}px`;
     div.style.zIndex = data.zIndex;
 
     const wrapper = document.createElement('div');
-    wrapper.className = 'graph-input-wrapper';
+    // .graph-input-wrapper { border: 1px solid var(--border-base); radius: var(--radius-md); padding: var(--spacing-sm) var(--spacing-md); bg: var(--bg-surface-hover); flex; items-center; }
+    // spacing-sm=4px(p-1), spacing-md=8px(px-2)
+    wrapper.className = 'border border-border-base rounded-md p-1 px-2 bg-surface-hover flex items-center';
 
     const label = document.createElement('span');
-    label.className = 'graph-label';
+    // .graph-label { font-size: 0.8rem; font-weight: bold; color: var(--text-secondary); margin-right: var(--spacing-md); }
+    label.className = 'text-xs font-bold text-text-secondary mr-2';
     label.innerHTML = "f(x)=";
 
     const mf = document.createElement('math-field');
@@ -25,7 +28,8 @@ export function createGraphNode(data, onSelect) {
     const graphId = `g-${data.id}`;
     const graphDiv = document.createElement('div');
     graphDiv.id = graphId;
-    graphDiv.className = 'graph-target';
+    // .graph-target { width: 100%; height: 220px; overflow: hidden; radius: var(--radius-md); border: 1px solid var(--border-base); }
+    graphDiv.className = 'w-full h-[220px] overflow-hidden rounded-md border border-border-base';
 
     const updateGraph = (val) => {
         try {
