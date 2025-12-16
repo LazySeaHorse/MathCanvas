@@ -1,11 +1,11 @@
 /* Main CSS - Imports all component styles */
 
 /* Base */
-@import './base/reset.css';
+/* @import './base/reset.css'; - Handled by Tailwind Preflight */
 @import './base/variables.css';
 
 /* Atoms */
-@import './atoms/button.css';
+/* @import './atoms/button.css'; - Migrated to Tailwind */
 @import './atoms/mathfield.css';
 @import './atoms/textarea.css';
 
