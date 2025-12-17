@@ -8,6 +8,5 @@
 @import './atoms/textarea.css';
 
 /* Molecules */
-@import './molecules/mode-button.css';
+/* Molecules */
 @import './molecules/markdown-editor.css';
-@import './molecules/zoom-control.css';
