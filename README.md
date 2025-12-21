@@ -2,7 +2,13 @@
 
 A lightweight, in-browser personal canvas where you can throw down whatever you're working on. Math, markdown, videos, code, graphs... you name it!
 
-[![fgjnhfgcv.jpg](https://i.postimg.cc/br5WzVbH/fgjnhfgcv.jpg)](https://postimg.cc/JHbPxqpG)
+<table>
+  <tr>
+    <td><img src="https://i.postimg.cc/BnDyN9Yw/dcfhtxfc.jpg" alt="Image 1" width="300"></td>
+    <td><img src="https://i.postimg.cc/xd3ZDG2D/erhyxrftgc.jpg" alt="Image 2" width="300"></td>
+  </tr>
+</table>
+
 
 ### What is this?
 Node-Blank is a desktop-first infinite canvas that focuses on a snappy, offline-first experience specifically optimized for mouse and keyboard users. It serves as a digital scratchpad where various types of content—from LaTeX formulas to interactive graphs—can be arranged freely in a 2D space.
