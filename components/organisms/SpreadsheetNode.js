@@ -3,6 +3,7 @@
  * Uses Jspreadsheet CE (v5)
  */
 import { interaction } from '../../state/appState.js';
+import { createNodeHeader } from '../molecules/NodeHeader.js';
 
 export function createSpreadsheetNode(data, onSelect) {
     const div = document.createElement('div');
@@ -16,15 +17,23 @@ export function createSpreadsheetNode(data, onSelect) {
     div.style.top = `${data.y}px`;
     div.style.zIndex = data.zIndex;
 
-    // Header (Simple strip like other nodes)
-    const header = document.createElement('div');
-    header.className = 'p-2 px-3 bg-surface-hover border-b border-border-base flex justify-between items-center cursor-grab select-none';
+    // Formula display bar (shows formula/value of selected cell)
+    const formulaDisplay = document.createElement('div');
+    formulaDisplay.className = 'flex items-center gap-2 bg-surface rounded border border-border-base px-2 py-1 min-w-[200px] max-w-[300px]';
 
-    const title = document.createElement('span');
-    title.textContent = 'Spreadsheet';
-    title.className = 'text-xs font-semibold text-text-secondary uppercase tracking-wider';
+    const formulaLabel = document.createElement('span');
+    formulaLabel.className = 'text-xs font-semibold text-text-tertiary';
+    formulaLabel.textContent = 'fx';
 
-    header.appendChild(title);
+    const formulaValue = document.createElement('span');
+    formulaValue.className = 'text-xs text-text-secondary font-mono truncate flex-1';
+    formulaValue.textContent = '';
+
+    formulaDisplay.appendChild(formulaLabel);
+    formulaDisplay.appendChild(formulaValue);
+
+    // Header with formula display
+    const header = createNodeHeader('Spreadsheet', [formulaDisplay]);
 
     // Content Container
     const contentDiv = document.createElement('div');
@@ -89,7 +98,23 @@ export function createSpreadsheetNode(data, onSelect) {
             onredo: syncData,
             onsort: syncData,
             onmoverow: syncData,
-            onmovecolumn: syncData
+            onmovecolumn: syncData,
+
+            // Update formula display when cell is selected
+            onselection: (instance, x1, y1, x2, y2, origin) => {
+                const ws = Array.isArray(worksheetInstance) ? worksheetInstance[0] : worksheetInstance;
+                if (ws && typeof ws.getValueFromCoords === 'function') {
+                    // Get the value of the first selected cell (top-left of selection)
+                    const cellValue = ws.getValueFromCoords(x1, y1);
+
+                    // Display the cell value (formulas in jspreadsheet start with '=')
+                    if (cellValue) {
+                        formulaValue.textContent = cellValue;
+                    } else {
+                        formulaValue.textContent = '';
+                    }
+                }
+            }
         });
     } else {
         contentDiv.textContent = "Error: Jspreadsheet library not loaded.";
