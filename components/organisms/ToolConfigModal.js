@@ -3,7 +3,7 @@
  * Allows user to customize which tools appear in the toolbar vs the "More" menu.
  */
 import { appState } from '../../state/appState.js';
-import { TOOLS } from '../../utils/toolRegistry.js';
+import { TOOLS, DEFAULT_TOOL_CONFIG } from '../../utils/toolRegistry.js';
 import { createIconElement } from '../../utils/icons.js';
 
 export function createToolConfigModal({ onClose }) {
@@ -119,6 +119,16 @@ export function createToolConfigModal({ onClose }) {
     // .modal-footer { bg: var(--bg-surface-hover); border-top: 1px solid var(--border-base); }
     footer.className = 'px-6 py-4 flex justify-end gap-3 bg-surface-hover border-t border-border-base';
 
+    const resetBtn = document.createElement('button');
+    // .btn-danger { color: #ef4444; } hover: bg-red-500/10
+    resetBtn.className = 'px-4 py-2 font-medium rounded-md transition-colors bg-transparent border-none cursor-pointer text-red-500 hover:bg-red-500/10 mr-auto';
+    resetBtn.textContent = 'Reset to Defaults';
+    resetBtn.onclick = () => {
+        toolbarItems = [...DEFAULT_TOOL_CONFIG.toolbar];
+        moreItems = [...DEFAULT_TOOL_CONFIG.more];
+        render(); // Re-render lists
+    };
+
     const cancelBtn = document.createElement('button');
     // .btn-secondary { color: var(--text-primary); } hover: bg-surface-active
     cancelBtn.className = 'px-4 py-2 font-medium rounded-md transition-colors bg-transparent border-none cursor-pointer text-text-primary hover:bg-surface-active';
@@ -138,6 +148,7 @@ export function createToolConfigModal({ onClose }) {
         cleanup();
     };
 
+    footer.appendChild(resetBtn);
     footer.appendChild(cancelBtn);
     footer.appendChild(saveBtn);
     modal.appendChild(footer);
