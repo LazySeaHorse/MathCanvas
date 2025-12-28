@@ -126,6 +126,7 @@ export function renderNode(data, world, selectNodeFn) {
         if (e.button !== 0) return;
 
         interaction.isDraggingNode = true;
+        document.body.classList.add('canvas-interacting');
         interaction.selectedId = data.id;
 
         // Mark all selected nodes as dragging

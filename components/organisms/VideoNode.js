@@ -52,7 +52,9 @@ export function createVideoNode(data, onSelect) {
     const iframe = document.createElement('iframe');
     iframe.src = embedUrl;
     // .video-iframe { display: block; border: none; border-radius: var(--radius-md); }
-    iframe.className = 'w-full h-full block border-none rounded-md pointer-events-auto';
+    // Using group-[.dragging]:pointer-events-none for node-level dragging
+    // Using [[.canvas-interacting]_&]:pointer-events-none for global canvas interactions (panning, etc.)
+    iframe.className = 'w-full h-full block border-none rounded-md pointer-events-auto group-[.dragging]:pointer-events-none [[.canvas-interacting]_&]:pointer-events-none';
     iframe.setAttribute('frameborder', '0');
     iframe.setAttribute('allowfullscreen', 'true');
     iframe.setAttribute('allow', 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture');

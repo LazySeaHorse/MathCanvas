@@ -125,6 +125,7 @@ export function setupCanvasEvents(container, world) {
             return false;
         })
         .on('start', (e) => {
+            document.body.classList.add('canvas-interacting');
             // Optional: cursor changes
             if (e.sourceEvent && (e.sourceEvent.type === 'mousedown' || e.sourceEvent.type === 'pointerdown')) {
                 container.style.cursor = 'grabbing';
@@ -139,6 +140,7 @@ export function setupCanvasEvents(container, world) {
             appState.pan = { x: t.x, y: t.y };
         })
         .on('end', () => {
+            document.body.classList.remove('canvas-interacting');
             container.style.cursor = 'crosshair'; // Logic from original
         });
 
@@ -163,6 +165,7 @@ export function setupCanvasEvents(container, world) {
             const nodeId = e.target.dataset.nodeId;
             const nodeData = appState.fields.find(f => f.id === nodeId);
             if (nodeData) {
+                document.body.classList.add('canvas-interacting');
                 interaction.isResizingNode = true;
                 interaction.resizeNodeId = nodeId;
                 interaction.startPos = { x: e.clientX, y: e.clientY };
@@ -179,6 +182,7 @@ export function setupCanvasEvents(container, world) {
         // D3 Zoom filter returns false for button 0, so D3 ignores this. We handle it here.
         // We also check for pointerType='touch' to strictly prevent Touch from selecting/drawing box
         if (e.button === 0 && (!e.pointerType || e.pointerType !== 'touch') && (e.target === container || e.target === world)) {
+            document.body.classList.add('canvas-interacting');
             interaction.isSelecting = true;
             const rect = container.getBoundingClientRect();
             interaction.selectionStart = {
@@ -211,10 +215,6 @@ export function setupCanvasEvents(container, world) {
                 if (el) {
                     el.style.width = `${nodeData.width}px`;
                     el.style.height = `${nodeData.height}px`;
-
-                    // Disable pointer events on iframes while resizing to prevent losing mouse focus
-                    const iframe = el.querySelector('iframe');
-                    if (iframe) iframe.style.pointerEvents = 'none';
                 }
             }
             return;
@@ -261,12 +261,9 @@ export function setupCanvasEvents(container, world) {
     });
 
     window.addEventListener('mouseup', () => {
+        document.body.classList.remove('canvas-interacting');
         if (interaction.isResizingNode) {
-            const el = document.getElementById(interaction.resizeNodeId);
-            if (el) {
-                const iframe = el.querySelector('iframe');
-                if (iframe) iframe.style.pointerEvents = 'auto';
-            }
+            // Logic handled by tailwind class now
         }
         interaction.isDraggingNode = false;
         interaction.isResizingNode = false;
