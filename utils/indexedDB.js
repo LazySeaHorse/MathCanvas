@@ -15,21 +15,21 @@ let db = null;
 export function initDB() {
     return new Promise((resolve, reject) => {
         const request = indexedDB.open(DB_NAME, DB_VERSION);
-        
+
         request.onerror = () => reject(request.error);
         request.onsuccess = () => {
             db = request.result;
             resolve(db);
         };
-        
+
         request.onupgradeneeded = (event) => {
             const database = event.target.result;
-            
+
             // Create canvases store (metadata)
             if (!database.objectStoreNames.contains(CANVAS_STORE)) {
                 database.createObjectStore(CANVAS_STORE, { keyPath: 'id' });
             }
-            
+
             // Create canvasData store (actual canvas state)
             if (!database.objectStoreNames.contains(CANVAS_DATA_STORE)) {
                 database.createObjectStore(CANVAS_DATA_STORE, { keyPath: 'canvasId' });
@@ -46,7 +46,7 @@ export function getAllCanvases() {
         const transaction = db.transaction([CANVAS_STORE], 'readonly');
         const store = transaction.objectStore(CANVAS_STORE);
         const request = store.getAll();
-        
+
         request.onsuccess = () => resolve(request.result);
         request.onerror = () => reject(request.error);
     });
@@ -60,7 +60,7 @@ export function getCanvasData(canvasId) {
         const transaction = db.transaction([CANVAS_DATA_STORE], 'readonly');
         const store = transaction.objectStore(CANVAS_DATA_STORE);
         const request = store.get(canvasId);
-        
+
         request.onsuccess = () => resolve(request.result);
         request.onerror = () => reject(request.error);
     });
@@ -72,7 +72,7 @@ export function getCanvasData(canvasId) {
 export function saveCanvasData(canvasId, data) {
     return new Promise((resolve, reject) => {
         const transaction = db.transaction([CANVAS_DATA_STORE, CANVAS_STORE], 'readwrite');
-        
+
         // Save canvas data
         const dataStore = transaction.objectStore(CANVAS_DATA_STORE);
         const canvasData = {
@@ -83,11 +83,11 @@ export function saveCanvasData(canvasId, data) {
             zIndexCounter: data.zIndexCounter
         };
         dataStore.put(canvasData);
-        
+
         // Update lastModified timestamp
         const metaStore = transaction.objectStore(CANVAS_STORE);
         const metaRequest = metaStore.get(canvasId);
-        
+
         metaRequest.onsuccess = () => {
             const canvas = metaRequest.result;
             if (canvas) {
@@ -95,7 +95,7 @@ export function saveCanvasData(canvasId, data) {
                 metaStore.put(canvas);
             }
         };
-        
+
         transaction.oncomplete = () => resolve();
         transaction.onerror = () => reject(transaction.error);
     });
@@ -108,9 +108,9 @@ export function createCanvas(name) {
     return new Promise((resolve, reject) => {
         const id = `canvas-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
         const now = Date.now();
-        
+
         const transaction = db.transaction([CANVAS_STORE, CANVAS_DATA_STORE], 'readwrite');
-        
+
         // Create canvas metadata
         const metaStore = transaction.objectStore(CANVAS_STORE);
         const canvas = {
@@ -120,7 +120,7 @@ export function createCanvas(name) {
             lastModified: now
         };
         metaStore.add(canvas);
-        
+
         // Create empty canvas data
         const dataStore = transaction.objectStore(CANVAS_DATA_STORE);
         const canvasData = {
@@ -131,7 +131,7 @@ export function createCanvas(name) {
             zIndexCounter: 1
         };
         dataStore.add(canvasData);
-        
+
         transaction.oncomplete = () => resolve(id);
         transaction.onerror = () => reject(transaction.error);
     });
@@ -143,13 +143,13 @@ export function createCanvas(name) {
 export function deleteCanvas(canvasId) {
     return new Promise((resolve, reject) => {
         const transaction = db.transaction([CANVAS_STORE, CANVAS_DATA_STORE], 'readwrite');
-        
+
         const metaStore = transaction.objectStore(CANVAS_STORE);
         metaStore.delete(canvasId);
-        
+
         const dataStore = transaction.objectStore(CANVAS_DATA_STORE);
         dataStore.delete(canvasId);
-        
+
         transaction.oncomplete = () => resolve();
         transaction.onerror = () => reject(transaction.error);
     });
@@ -163,7 +163,7 @@ export function renameCanvas(canvasId, newName) {
         const transaction = db.transaction([CANVAS_STORE], 'readwrite');
         const store = transaction.objectStore(CANVAS_STORE);
         const request = store.get(canvasId);
-        
+
         request.onsuccess = () => {
             const canvas = request.result;
             if (canvas) {
@@ -172,7 +172,7 @@ export function renameCanvas(canvasId, newName) {
                 store.put(canvas);
             }
         };
-        
+
         transaction.oncomplete = () => resolve();
         transaction.onerror = () => reject(transaction.error);
     });
@@ -184,7 +184,7 @@ export function renameCanvas(canvasId, newName) {
 export async function exportAllCanvases() {
     const canvases = await getAllCanvases();
     const allData = [];
-    
+
     for (const canvas of canvases) {
         const data = await getCanvasData(canvas.id);
         allData.push({
@@ -192,7 +192,7 @@ export async function exportAllCanvases() {
             data: data
         });
     }
-    
+
     return {
         version: 1,
         exportedAt: Date.now(),
@@ -205,28 +205,29 @@ export async function exportAllCanvases() {
  * Import all canvases with conflict resolution
  * @param {Object} importData - The exported data
  * @param {string} conflictStrategy - 'replace', 'rename', or 'abort'
+ * @param {boolean} dryRun - If true, only check for conflicts without importing
  * @returns {Promise<{imported: number, skipped: number, conflicts: Array}>}
  */
-export async function importAllCanvases(importData, conflictStrategy = 'abort') {
+export async function importAllCanvases(importData, conflictStrategy = 'abort', dryRun = false) {
     if (!importData.version || importData.version !== 1) {
         throw new Error('Unsupported export format');
     }
-    
+
     const existingCanvases = await getAllCanvases();
     const existingIds = new Set(existingCanvases.map(c => c.id));
     const conflicts = [];
     let imported = 0;
     let skipped = 0;
-    
+
     for (const item of importData.canvases) {
         const { metadata, data } = item;
         let canvasId = metadata.id;
         let canvasName = metadata.name;
-        
+
         // Check for conflicts
         if (existingIds.has(canvasId)) {
             conflicts.push({ id: canvasId, name: canvasName });
-            
+
             if (conflictStrategy === 'abort') {
                 continue; // Will be handled by caller
             } else if (conflictStrategy === 'rename') {
@@ -238,10 +239,15 @@ export async function importAllCanvases(importData, conflictStrategy = 'abort') 
                 await deleteCanvas(canvasId);
             }
         }
-        
+
+        if (dryRun) {
+            imported++;
+            continue;
+        }
+
         // Import canvas
         const transaction = db.transaction([CANVAS_STORE, CANVAS_DATA_STORE], 'readwrite');
-        
+
         const metaStore = transaction.objectStore(CANVAS_STORE);
         const newMetadata = {
             id: canvasId,
@@ -250,7 +256,7 @@ export async function importAllCanvases(importData, conflictStrategy = 'abort') 
             lastModified: Date.now()
         };
         metaStore.put(newMetadata);
-        
+
         const dataStore = transaction.objectStore(CANVAS_DATA_STORE);
         const newData = {
             canvasId: canvasId,
@@ -260,14 +266,14 @@ export async function importAllCanvases(importData, conflictStrategy = 'abort') 
             zIndexCounter: data.zIndexCounter
         };
         dataStore.put(newData);
-        
+
         await new Promise((resolve, reject) => {
             transaction.oncomplete = () => resolve();
             transaction.onerror = () => reject(transaction.error);
         });
-        
+
         imported++;
     }
-    
+
     return { imported, skipped, conflicts };
 }

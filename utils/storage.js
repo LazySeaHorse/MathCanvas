@@ -145,8 +145,8 @@ export async function importAllCanvasesJSON(file, callback) {
                 return;
             }
 
-            // Check for conflicts first
-            const result = await importAllCanvases(data, 'abort');
+            // Check for conflicts first (dry run)
+            const result = await importAllCanvases(data, 'abort', true);
 
             if (result.conflicts.length > 0) {
                 // Show conflict dialog
@@ -161,11 +161,11 @@ export async function importAllCanvasesJSON(file, callback) {
                 }
 
                 // Re-import with chosen strategy
-                const finalResult = await importAllCanvases(data, choice);
+                const finalResult = await importAllCanvases(data, choice, false);
                 alert(`Import complete!\nImported: ${finalResult.imported} canvas(es)`);
             } else {
                 // No conflicts, import directly
-                const finalResult = await importAllCanvases(data, 'rename');
+                const finalResult = await importAllCanvases(data, 'abort', false);
                 alert(`Import complete!\nImported: ${finalResult.imported} canvas(es)`);
             }
 
